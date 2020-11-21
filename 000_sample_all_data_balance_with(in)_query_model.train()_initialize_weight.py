@@ -206,22 +206,11 @@ def get_pair_doc_data(y_train, query_id):
     new_array_train_x1 = np.vstack((tmp_array_train_x1_1, tmp_array_train_x1_0))
     new_array_train_y1 = np.hstack((tmp_array_train_y1_1, tmp_array_train_y1_0))
     new_array_within_query_signal = np.hstack((tmp_array_within_query_signal_1, tmp_array_within_query_signal_0))
-    
-#     samples = int(array_train_x0.shape[0] * samples_portion_of_all)
-#     samples_index = np.random.choice(np.arange(array_train_x0.shape[0]), samples, replace=False)
-    
-#     tmp_array_train_x0 = array_train_x0[samples_index]
-#     tmp_array_train_y0 = array_train_y0[samples_index]
-#     tmp_array_train_x1 = array_train_x1[samples_index]
-#     tmp_array_train_y1 = array_train_y1[samples_index]
-#     tmp_array_within_query_signal = array_within_query_signal[samples_index]
-    
+        
     return samples, new_array_train_x0, new_array_train_y0, new_array_train_x1, new_array_train_y1, new_array_within_query_signal
 
 
 # #### Dstaset
-
-# In[13]:
 
 
 class Dataset(data.Dataset):
@@ -415,21 +404,7 @@ def train_model(baseline_model, actor_model,critic_model, epochs, lamda, beta, g
     return actor_model,critic_model,baseline_model
 
 
-# In[ ]:
 
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# ### train
-
-# In[16]:
 
 
 model_para = {'lambda':0.3,
@@ -509,92 +484,6 @@ for k in range(1):
     torch.save(critic_list[k].state_dict(), './tmp_model_saved/sample_0.0001_of_all_balance_model.train_initialize_weight/***_(beta_0.1_gamma_0.5_epoch_1000_batch_32)_critic_{}.pth'.format(k))
     torch.save(baseline_list[k].state_dict(), './tmp_model_saved/sample_0.0001_of_all_balance_model.train_initialize_weight/***_(beta_0.1_gamma_0.5_epoch_1000_batch_32)_baseline_{}.pth'.format(k))
 
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
 
 
 
