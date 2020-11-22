@@ -12,6 +12,9 @@ import numpy as np
 import os
 import torch.nn.functional as F
 
+import time
+import json
+
 
 # ### 1  Actor,Critic,Baseline network¶
 
@@ -330,6 +333,12 @@ def train_model(baseline_model, actor_model,critic_model, epochs, lamda, beta, g
 
         for batch, (data1, y1, data2, y2, signal) in enumerate(train_loader):
             
+            data1 = data1.to(device)
+            y1 = y1.to(device)
+            data2 = data2.to(device)
+            y2 = y2.to(device)
+            signal = signal.to(device)
+            
             # get selections of data1 and data2
             actor_output_1 = actor_model(data1.float())
             selection_1 = torch.bernoulli(torch.tensor(actor_output_1))
@@ -388,6 +397,12 @@ def train_model(baseline_model, actor_model,critic_model, epochs, lamda, beta, g
         
         with torch.no_grad():   
             for batch, (data1, y1, data2, y2, signal) in enumerate(vali_loader):
+                
+                data1 = data1.to(device)
+                y1 = y1.to(device)
+                data2 = data2.to(device)
+                y2 = y2.to(device)
+                signal = signal.to(device)
                                 
                 vali_actor_output_1 = actor_model(data1.float())
                 vali_selection_1 = torch.bernoulli(torch.tensor(vali_actor_output_1))
@@ -461,11 +476,15 @@ actor_list = []
 critic_list = []
 baseline_list = []
 
+device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+
 beta = 0.1
 gamma = 0.5
 samples_portion_of_all = 0.0001
 
 for k in range(1):
+    
+    print('start: %s'%time.ctime())
 
     y_train = []
     x_train = []
@@ -483,20 +502,24 @@ for k in range(1):
 
     test_path = path + 'test.txt'
     test_loader = get_loader(test_path, batch_size, shuffle=True, drop_last=True)
+    
+    print('loaders finished, start training: %s'%time.ctime())
 
-    actor = Actor(46, model_para['actor_h_dim'], model_para['actor_output'], model_para['n_layer'], model_para['activation'])
-    critic = Critic_RankNet(46, model_para['critic_h_dim'], model_para['critic_output'])
-    baseline = Baseline_RankNet(46, model_para['baseline_h_dim'], model_para['baseline_output'])
+    actor = Actor(46, model_para['actor_h_dim'], model_para['actor_output'], model_para['n_layer'], model_para['activation']).to(device)
+    critic = Critic_RankNet(46, model_para['critic_h_dim'], model_para['critic_output']).to(device)
+    baseline = Baseline_RankNet(46, model_para['baseline_h_dim'], model_para['baseline_output']).to(device)
 
     actor.apply(init_weights)
     critic.apply(init_weights)
     baseline.apply(init_weights)
     
-    trained_model_list = train_model(baseline, actor, critic, 300, model_para['lambda'], beta, gamma)
+    trained_model_list = train_model(baseline, actor, critic, 1000, model_para['lambda'], beta, gamma)
 
     actor_list.append(trained_model_list[0])
     critic_list.append(trained_model_list[1])
     baseline_list.append(trained_model_list[2])
+    
+    print('end training: %s'%time.ctime())
 
 
 # ### save
@@ -505,96 +528,9 @@ for k in range(1):
 
 
 for k in range(1):    
-    torch.save(actor_list[k].state_dict(), './tmp_model_saved/sample_0.0001_of_all_balance_model.train_initialize_weight/***_(beta_0.1_gamma_0.5_epoch_1000_batch_32)_actor_{}.pth'.format(k))
-    torch.save(critic_list[k].state_dict(), './tmp_model_saved/sample_0.0001_of_all_balance_model.train_initialize_weight/***_(beta_0.1_gamma_0.5_epoch_1000_batch_32)_critic_{}.pth'.format(k))
-    torch.save(baseline_list[k].state_dict(), './tmp_model_saved/sample_0.0001_of_all_balance_model.train_initialize_weight/***_(beta_0.1_gamma_0.5_epoch_1000_batch_32)_baseline_{}.pth'.format(k))
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
+    torch.save(actor_list[k].state_dict(), 'actor_layer20_epoch_1000_{}.pth'.format(k))
+    #torch.save(critic_list[k].state_dict(), 'criticr_layer20_{}.pth'.format(k))
+    #torch.save(baseline_list[k].state_dict(), 'baseliner_layer20_{}.pth'.format(k))
 
 
 
