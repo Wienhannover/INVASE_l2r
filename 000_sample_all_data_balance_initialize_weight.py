@@ -231,10 +231,13 @@ class Dataset(data.Dataset):
 
     def __init__(self, data_path):
         # 解析训练数据
-        get_format_data(data_path)
+        #get_format_data(data_path)
         # pair组合
-        self.datasize, self.array_train_x0, self.array_train_y0, self.array_train_x1, self.array_train_y1, self.array_within_query_signal = get_pair_doc_data(y_train, query_id)
-
+        #self.datasize, self.array_train_x0, self.array_train_y0, self.array_train_x1, self.array_train_y1, self.array_within_query_signal = get_pair_doc_data(y_train, query_id)
+        
+        read_numpy = np.load(data_path)   
+        self.array_train_x0, self.array_train_y0, self.array_train_x1, self.array_train_y1, self.array_within_query_signal = read_numpy['arr_0'], read_numpy['arr_1'], read_numpy['arr_2'], read_numpy['arr_3'], read_numpy['arr_4']
+    
     def __getitem__(self, index):
         
         data1 = torch.from_numpy(self.array_train_x0[index]).float()
@@ -248,7 +251,8 @@ class Dataset(data.Dataset):
         return data1, y1, data2, y2, signal
 
     def __len__(self):
-        return self.datasize
+        #return self.datasize
+        return self.array_train_x0.shape[0]
 
 def get_loader(data_path, batch_size, shuffle, drop_last):
     
@@ -454,7 +458,7 @@ model_para = {'lambda':0.3,
               'actor_output' :46,
               'critic_output':1,
               'baseline_output':1,
-              'n_layer':3,
+              'n_layer':20,
               'activation':'selu',
               'learning_rate':0.0001}
 batch_size = 32
@@ -492,15 +496,15 @@ for k in range(1):
     array_train_x1 = []
     array_train_x0 = []
 
-    path = "./MQ2008/Fold{}/".format(k+1)
+    path = "./MQ2008/fold_{}/".format(k+1)
 
-    train_path = path + 'train.txt'
+    train_path = path + 'train.npz'
     train_loader = get_loader(train_path, batch_size, shuffle=True, drop_last=True)
 
-    vali_path = path + 'vali.txt'
+    vali_path = path + 'vali.npz'
     vali_loader = get_loader(vali_path, batch_size, shuffle=True, drop_last=True)
 
-    test_path = path + 'test.txt'
+    test_path = path + 'test.npz'
     test_loader = get_loader(test_path, batch_size, shuffle=True, drop_last=True)
     
     print('loaders finished, start training: %s'%time.ctime())
