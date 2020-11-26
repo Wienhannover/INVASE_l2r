@@ -220,17 +220,23 @@ def train_model(actor_model, critic_model, baseline_model, patience, epoch_start
 
         for batch, (data1, y1, data2, y2, signal) in enumerate(train_loader):
             
+            data1 = data1.float().to(device)
+            y1 = y1.to(device)
+            data2 = data2.float().to(device)
+            y2 = y2.to(device)
+            signal = signal.to(device)
+            
             # get selections of data1 and data2
-            actor_output_1 = actor_model(data1.float())
+            actor_output_1 = actor_model(data1)
 #             selection_1 = torch.bernoulli(torch.tensor(actor_output_1))
             selection_1 = torch.bernoulli(actor_output_1)
             
-            actor_output_2 = actor_model(data2.float())
+            actor_output_2 = actor_model(data2)
 #             selection_2 = torch.bernoulli(torch.tensor(actor_output_2))
             selection_2 = torch.bernoulli(actor_output_2)
 
             # train critic model
-            critic_output = critic_model(data1.float(), selection_1, data2.float(), selection_2)
+            critic_output = critic_model(data1, selection_1, data2, selection_2)
             
             label_difference = y1.ge(y2).double()
             critic_loss_output = critic_criterion(critic_output.double(), label_difference)
@@ -239,27 +245,27 @@ def train_model(actor_model, critic_model, baseline_model, patience, epoch_start
             critic_loss_output.backward(retain_graph = True)
             critic_optimizer.step()
             
-            critic_output_1 = critic_model.predict(data1.float(), selection_1)
-            critic_output_2 = critic_model.predict(data2.float(), selection_2)
+            critic_output_1 = critic_model.predict(data1, selection_1)
+            critic_output_2 = critic_model.predict(data2, selection_2)
             
             #--------Performance of predictor------------------------------------------------------
-            critic_acc_1 = torch.eq(critic_output_1.ge(0.5).view(1,-1), y1.ge(1).view(1,-1)).sum().item() / batch_size
-            critic_acc_2 = torch.eq(critic_output_2.ge(0.5).view(1,-1), y2.ge(1).view(1,-1)).sum().item() / batch_size
+            critic_acc_1 = torch.eq(critic_output_1.ge(0.5).view(1,-1), y1.ge(1).view(1,-1)).sum().item() / float(batch_size)
+            critic_acc_2 = torch.eq(critic_output_2.ge(0.5).view(1,-1), y2.ge(1).view(1,-1)).sum().item() / float(batch_size)
             
             epoch_train_critic_acc.append((critic_acc_1 + critic_acc_2) / 2)
                 
             #--------------------------------------------------------------------------------------
             
             # train basseline model
-            baseline_output = baseline_model(data1.float(), data2.float())
+            baseline_output = baseline_model(data1, data2)
             baseline_loss_output = baseline_criterion(baseline_output.double(), label_difference)
 
             baseline_optimizer.zero_grad()
             baseline_loss_output.backward(retain_graph = True)
             baseline_optimizer.step()
             
-            baseline_output_1 = baseline_model.predict(data1.float())
-            baseline_output_2 = baseline_model.predict(data2.float())
+            baseline_output_1 = baseline_model.predict(data1)
+            baseline_output_2 = baseline_model.predict(data2)
 
             critic_loss_1 = -((y1.ge(1).float().view(-1,1) * torch.log(critic_output_1 + 1e-8)) + (1-y1.ge(1).float().view(-1,1)) * torch.log(1 - critic_output_1 + 1e-8))
             critic_loss_2 = -((y2.ge(1).float().view(-1,1) * torch.log(critic_output_2 + 1e-8)) + (1-y2.ge(1).float().view(-1,1)) * torch.log(1 - critic_output_2 + 1e-8))
@@ -289,19 +295,25 @@ def train_model(actor_model, critic_model, baseline_model, patience, epoch_start
         
         with torch.no_grad():   
             for batch, (data1, y1, data2, y2, signal) in enumerate(vali_loader):
+                
+                data1 = data1.float().to(device)
+                y1 = y1.to(device)
+                data2 = data2.float().to(device)
+                y2 = y2.to(device)
+                signal = signal.to(device)
                                 
-                vali_actor_output_1 = actor_model(data1.float())
+                vali_actor_output_1 = actor_model(data1)
 #                 vali_selection_1 = torch.bernoulli(vali_actor_output_1)
                 vali_selection_1 = vali_actor_output_1.ge(0.5).type(torch.int)
                                           
-                vali_actor_output_2 = actor_model(data2.float())
+                vali_actor_output_2 = actor_model(data2)
 #                 vali_selection_2 = torch.bernoulli(vali_actor_output_2)
                 vali_selection_2 = vali_actor_output_2.ge(0.5).type(torch.int)
                                           
-                vali_critic_output_1 = critic_model.predict(data1.float(), vali_selection_1)
-                vali_critic_output_2 = critic_model.predict(data2.float(), vali_selection_2)
-                vali_baseline_output_1 = baseline_model.predict(data1.float())
-                vali_baseline_output_2 = baseline_model.predict(data2.float())
+                vali_critic_output_1 = critic_model.predict(data1, vali_selection_1)
+                vali_critic_output_2 = critic_model.predict(data2, vali_selection_2)
+                vali_baseline_output_1 = baseline_model.predict(data1)
+                vali_baseline_output_2 = baseline_model.predict(data2)
                 
                 
                 vali_critic_loss_1 = -((y1.ge(1).float().view(-1,1) * torch.log(vali_critic_output_1 + 1e-8)) + (1-y1.ge(1).float().view(-1,1)) * torch.log(1 - vali_critic_output_1 + 1e-8))
@@ -313,7 +325,16 @@ def train_model(actor_model, critic_model, baseline_model, patience, epoch_start
 
                 epoch_vali_actor_loss_output.append(vali_actor_loss_output.item())
                 
+                #--------Performance of predictor------------------------------------------------------
+                vali_critic_acc_1 = torch.eq(vali_critic_output_1.ge(0.5).view(1,-1), y1.ge(1).view(1,-1)).sum().item() / float(batch_size)
+                vali_critic_acc_2 = torch.eq(vali_critic_output_2.ge(0.5).view(1,-1), y2.ge(1).view(1,-1)).sum().item() / float(batch_size)
+
+                epoch_vali_critic_acc.append((vali_critic_acc_1 + vali_critic_acc_2) / 2)
+
+                #--------------------------------------------------------------------------------------
+                
         print("---------------Vali actor loss-------------", np.mean(epoch_vali_actor_loss_output))
+        print("---------------Vali critic acc-------------", np.mean(epoch_vali_critic_acc))
         
         # early_stopping needs the validation loss to check if it has decresed, 
         # and if it has, it will make a checkpoint of the current model
@@ -360,6 +381,8 @@ actor_list = []
 critic_list = []
 baseline_list = []
 
+device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+
 beta = args_in.beta
 gamma = args_in.gamma
 
@@ -387,9 +410,9 @@ for k in range(1):
     test_path = path + 'test.npz'
     test_loader = get_loader(test_path, batch_size, shuffle=True, drop_last=True)
 
-    actor = Actor(46, model_para['actor_h_dim'], model_para['actor_output'], model_para['n_layer'], model_para['activation'])
-    critic = Critic_RankNet(46, model_para['critic_h_dim'], model_para['critic_output'])
-    baseline = Baseline_RankNet(46, model_para['baseline_h_dim'], model_para['baseline_output'])
+    actor = Actor(46, model_para['actor_h_dim'], model_para['actor_output'], model_para['n_layer'], model_para['activation']).to(device)
+    critic = Critic_RankNet(46, model_para['critic_h_dim'], model_para['critic_output']).to(device)
+    baseline = Baseline_RankNet(46, model_para['baseline_h_dim'], model_para['baseline_output']).to(device)
 
     actor.apply(init_weights)
     critic.apply(init_weights)
