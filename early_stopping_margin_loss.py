@@ -237,8 +237,8 @@ def pair_actor_loss(actor_output_1, actor_output_2, selection_1, selection_2, cr
     
     selection_loss = -((actor_output_1 * torch.log(actor_output_2 + 1e-8) + (1-actor_output_1) * torch.log(1-actor_output_2 + 1e-8))).sum(1)
     
-    signal_beta = signal.type(torch.bool)
-    signal_gamma = (1 - signal).type(torch.bool)
+    signal_beta = signal.type(torch.uint8)
+    signal_gamma = (1 - signal).type(torch.uint8)
     final_selection_loss = torch.FloatTensor(selection_loss.size()).type_as(selection_loss)
     
     final_selection_loss[signal_beta] = selection_loss[signal_beta]
@@ -479,8 +479,8 @@ margin = args_in.margin
 
 samples_portion_of_all = 0.0001
 
-patience = 100
-epoch_start_early_stopping = 1000
+patience = 1000
+epoch_start_early_stopping = 2000
 
 for k in range(1):
 
