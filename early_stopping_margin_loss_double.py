@@ -24,7 +24,7 @@ parser = argparse.ArgumentParser()
 
 parser.add_argument('--lamb', type=float)
 parser.add_argument('--margin', type=float)
-
+parser.add_argument('--patience', type=int)
 
 args_in = parser.parse_args()
 
@@ -250,8 +250,8 @@ def pair_actor_loss(pair_actor_output, pair_selection, critic_loss_1, critic_los
     
     selection_loss = -((actor_output_1 * torch.log(actor_output_2 + 1e-8) + (1-actor_output_1) * torch.log(1-actor_output_2 + 1e-8))).sum(1)
     
-    signal_beta = signal.type(torch.bool)
-    signal_gamma = (1 - signal).type(torch.bool)
+    signal_beta = signal.type(torch.uint8)
+    signal_gamma = (1 - signal).type(torch.uint8)
     final_selection_loss = torch.FloatTensor(selection_loss.size()).type_as(selection_loss)
     
     final_selection_loss[signal_beta] = selection_loss[signal_beta]
@@ -505,7 +505,7 @@ margin = args_in.margin
 
 samples_portion_of_all = 0.0001
 
-patience = 100
+patience = args_in.patience
 epoch_start_early_stopping = 1000
 
 for k in range(1):
@@ -537,7 +537,7 @@ for k in range(1):
     
     tmp_saved_path = 'checkpoint.pt'
     
-    trained_model_list = train_model(actor, critic, baseline, patience, epoch_start_early_stopping, tmp_saved_path, 3000, model_para['lambda'], margin)
+    trained_model_list = train_model(actor, critic, baseline, patience, epoch_start_early_stopping, tmp_saved_path, 20000, model_para['lambda'], margin)
 
     actor_list.append(trained_model_list[0])
     critic_list.append(trained_model_list[1])
